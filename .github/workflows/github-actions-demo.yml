@@ -8,14 +8,35 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
       - run: |
+          mkdir templates
+          cat << 'EOF' >> templates/pubspec.mustache
+          #
+          # AUTO-GENERATED FILE, DO NOT MODIFY!
+          #
+
+          name: '{{{pubName}}}'
+          version: '{{{pubVersion}}}'
+          description: '{{{pubDescription}}}'
+          homepage: '{{{pubHomepage}}}'
+          {{#pubRepository}}
+          repository: {{.}}
+          {{/pubRepository}}
+          {{#pubPublishTo}}
+          publish_to: {{.}}
+          {{/pubPublishTo}}
+          environment:
+            sdk: '>=2.12.0 <4.0.0'
+          dependencies:
+            collection: '^1.17.0'
+            http: '>=0.13.0 <0.14.0'
+            intl: any
+            meta: '^1.1.8'
+          dev_dependencies:
+            test: '>=1.21.6 <1.22.0'
+          {{#json_serializable}}
+            build_runner: '^1.10.9'
+            json_serializable: '^3.5.1'
+          {{/json_serializable}}
+          EOF
           curl -o ogc.jar https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.4.0/openapi-generator-cli-7.4.0.jar
-          mkdir folder
-          echo hi > folder/artifact1
-          mkdir folder/folder
-          echo hey > folder/folder/artifact2
-          java -jar ogc.jar
-      - name: Archive production artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifacts
-          path: folder
+          java -jar ogc.jar generate -i https://raw.githubusercontent.com/openapitools/openapi-generator/master/modules/openapi-generator/src/test/resources/3_0/petstore.yaml -g dart -t templates
