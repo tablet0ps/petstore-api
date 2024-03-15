@@ -4,10 +4,16 @@ on: [push]
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
+    env: 
+      CI_COMMIT_MESSAGE: Continuous Integration Build Artifacts
+      CI_COMMIT_AUTHOR: Continuous Integration
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-      - run: |
+        with:
+          path: 'repo'
+      - name: Generate SDK
+        run: |
           mkdir templates
           cat << 'EOF' >> templates/pubspec.mustache
           #
@@ -39,4 +45,12 @@ jobs:
           {{/json_serializable}}
           EOF
           curl -o ogc.jar https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/7.4.0/openapi-generator-cli-7.4.0.jar
-          java -jar ogc.jar generate -i https://raw.githubusercontent.com/openapitools/openapi-generator/master/modules/openapi-generator/src/test/resources/3_0/petstore.yaml -g dart -t templates
+          cd repo
+          java -jar ../ogc.jar generate -i https://raw.githubusercontent.com/openapitools/openapi-generator/master/modules/openapi-generator/src/test/resources/3_0/petstore.yaml -g dart -t ../templates
+      - name: GIT Commit Build Artifacts (coverage, dist, devdist, docs)
+        if: github.event_name == 'push'
+        run: |
+          git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
+          git config --global user.email "username@users.noreply.github.com"
+          git commit -a -m "${{ env.CI_COMMIT_MESSAGE }}"
+          git push
